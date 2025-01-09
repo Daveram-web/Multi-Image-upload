@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Web-Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: black;
+            color: white;
+            border-right: 2px solid white;
+        }
+
+    </style>
+    <script>
+        function handleSubmit() {
+            window.location.href = "http://localhost:3000/get_image_data";
+        }
+
+        function navigateToImageById() {
+            var imageId = prompt("Enter the ID of the image:");
+            if (imageId !== null && imageId.trim() !== "") {
+                window.location.href = "http://localhost:3000/upload" + encodeURIComponent(imageId);
+            } else {
+                alert("Image ID cannot be empty.");
+            }
+        }
+
+        function handleFileUpload() {
+    event.preventDefault(); // Prevent default form submission
+
+    const formData = new FormData();
+    const name = document.querySelector('[name="name"]').value;
+    const imageFile = document.querySelector('[name="image_path"]').files[0];
+
+    if (!name || !imageFile) {
+      alert("Please provide both a name and an image.");
+      return;
+    }
+
+    formData.append('name', name);
+    formData.append('images', imageFile); // Match the 'images' key expected by the backend
+
+    fetch('http://localhost:3000/upload', {
+      method: 'POST',
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.text(); // Use `.text()` since the server sends plain text
+      })
+      .then((data) => {
+        alert(data); // Show the server response (e.g., success message)
+        console.log(data);
+      })
+      .catch((error) => {
+        console.error('Error uploading file:', error);
+        alert('Error uploading file.');
+      });
+  }
+    </script>
+</head>
+
+<body>
+    <form>
+        <h1>Image Web-Form</h1>
+
+        <fieldset>
+            <p><b>1. URL: http://localhost:3000/get_image_data</b></p>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Label Name</th>
+                        <th>Value</th>
+                        <th>Variable Name</th>
+                        <th>Mandatory</th>
+                        <th>Note</th>
+                        <th>Sample Value</th>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <center>
+                <button type="button" onclick="handleSubmit()">Submit</button>
+            </center>
+        </fieldset>
+        <br>
+
+        <fieldset>
+            <h4>2. URL : http://localhost:3000/image-upload</h4>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Label Name</th>
+                        <th>Value</th>
+                        <th>Variable Name</th>
+                        <th>Mandatory</th>
+                        <th>Note</th>
+                        <th>Sample Value</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>Name:</td>
+                        <td><input type="text" name="name" required></td>
+                        <td>name</td>
+                        <td>Yes</td>
+                        <td>Text or Name of the Image Should be uploaded</td>
+                        <td>Tree</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Image</td>
+                        <td><input type="text" name="image_path" accept="image/*" required></td>
+                        <td>image_path</td>
+                        <td>Yes</td>
+                        <td>Image file should be uploaded</td>
+                        <td>base64 encoded</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <center>
+                <button type="button"  onclick="handleFileUpload()" >Submit</button>
+            </center>
+        </fieldset>
+        <br><br>
+
+        <fieldset>
+            <h4>3. URL : http://localhost:3000/name/:id</h4>
+            <table>
+                <tbody>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Label Name</th>
+                        <th>Value</th>
+                        <th>Variable Name</th>
+                        <th>Mandatory</th>
+                        <th>Note</th>
+                        <th>Sample Value</th>
+                    </tr>
+                    <tr>
+                        <td>1</td>
+                        <td>Name</td>
+                        <td><input type="text" name="name" required></td>
+                        <td>name</td>
+                        <td>Yes</td>
+                        <td></td>
+                        <td>1</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <center>
+                <button type="button" onclick="navigateToImageById()">Submit</button>
+            </center>
+        </fieldset>
+    </form>
+
+    <br>
+   
+</body>
+
+</html>
