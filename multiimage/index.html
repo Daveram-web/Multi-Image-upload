@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Image Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .form-container, .image-list, .filter-container {
+      margin: 20px auto;
+      max-width: 800px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .image-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: start;
+    }
+    .image-item {
+      margin: 10px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 8px;
+      text-align: center;
+      width: 120px;
+    }
+    .image-item img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+    .image-item button {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .image-item button:hover {
+      background-color: #ff1a1a;
+    }
+    .btn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+    .edit-btn {
+      background-color: #ff9900;
+      color: white;
+      padding: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .edit-btn:hover {
+      background-color: #e68a00;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Admin Dashboard - Image Management</h1>
+
+  <!-- Form to upload multiple images -->
+  <div class="form-container">
+    <h2>Upload Multiple Images</h2>
+    <form id="upload-form" action="http://localhost:3000/upload" method="POST" enctype="multipart/form-data">
+      <label for="name">Image Name:</label>
+      <input type="text" name="name" id="name" placeholder="Enter image name" required><br><br>
+
+      <label for="images">Select Images:</label>
+      <input type="file" name="images" id="images" accept="image/*" multiple required><br><br>
+
+      <button class="btn" type="submit">Upload Images</button>
+    </form>
+  </div>
+
+  <!-- Dropdown to filter by name -->
+  <div class="filter-container">
+    <h2>View Images by Name</h2>
+    <select id="name-filter">
+      <option value="">Select a Name</option>
+    </select>
+  </div>
+
+  <!-- Display Images by Selected Name -->
+  <div class="image-list" id="filtered-image-list">
+    <h2>Filtered Images</h2>
+    <!-- Filtered images will be dynamically listed here -->
+  </div>
+
+  <!-- Modal for Editing Image -->
+  <div id="editModal" style="display:none;">
+    <h2>Edit Image</h2>
+    <form id="edit-form">
+      <label for="new-name">New Image Name:</label>
+      <input type="text" id="new-name" placeholder="Enter new name"><br><br>
+
+      <label for="new-image">Upload New Image:</label>
+      <input type="file" id="new-image" accept="image/*"><br><br>
+
+      <button class="btn" type="submit">Update Image</button>
+      <button type="button" onclick="closeEditModal()">Cancel</button>
+    </form>
+  </div>
+
+  <script>
+    let currentImageId = null;
+
+    // Fetch unique names for the dropdown
+    async function fetchNames() {
+      const response = await fetch('http://localhost:3000/names');
+      const names = await response.json(); 
+      const nameFilter = document.getElementById('name-filter');
+      nameFilter.innerHTML = '<option value="">Select a Name</option>';
+      names.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name.name;
+        option.textContent = name.name;
+        nameFilter.appendChild(option);
+      });
+    }
+
+    // Fetch and display images for the selected name
+    async function fetchImagesByName(name) {
+      const response = await fetch(`http://localhost:3000/images/by-name/${name}`);
+      if (!response.ok) {
+        console.error('Failed to fetch images.');
+        return;
+      }
+
+      const images = await response.json();
+      const imageListContainer = document.getElementById('filtered-image-list');
+      imageListContainer.innerHTML = '';
+
+      images.forEach(image => {
+        const imageItem = document.createElement('div');
+        imageItem.classList.add('image-item');
+        imageItem.innerHTML = `
+          <img src="${image.url}" alt="Image">
+          <p>ID: ${image.id}</p>
+          <p>Name: ${image.name}</p>
+          <button onclick="deleteImage(${image.id})">Delete</button>
+          <button class="edit-btn" onclick="openEditModal(${image.id}, '${image.name}', '${image.url}')">Edit</button>
+        `;
+        imageListContainer.appendChild(imageItem);
+      });
+    }
+
+    // Handle name filter change
+    document.getElementById('name-filter').addEventListener('change', (e) => {
+      const selectedName = e.target.value;
+      if (selectedName) {
+        fetchImagesByName(selectedName);
+      }
+    });
+
+    // Function to delete an image by ID
+    async function deleteImage(id) {
+      const response = await fetch(`http://localhost:3000/image/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Image deleted successfully!');
+        fetchImagesByName(document.getElementById('name-filter').value);
+      } else {
+        alert('Failed to delete image.');
+      }
+    }
+
+    // Function to open the edit modal
+    function openEditModal(id, currentName, currentUrl) {
+      currentImageId = id;
+      document.getElementById('new-name').value = currentName;
+      document.getElementById('editModal').style.display = 'block';
+    }
+
+    // Close the edit modal
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    // Handle the form submission for editing
+    document.getElementById('edit-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const newName = document.getElementById('new-name').value;
+      const newImage = document.getElementById('new-image').files[0];
+
+      const formData = new FormData();
+      formData.append('name', newName);
+      if (newImage) {
+        formData.append('image', newImage);
+      }
+
+      const response = await fetch(`http://localhost:3000/image/${currentImageId}`, {
+        method: 'PUT',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('Image updated successfully!');
+        fetchImagesByName(document.getElementById('name-filter').value);
+        closeEditModal();
+      } else {
+        alert('Failed to update image.');
+      }
+    });
+
+    // Fetch names on page load
+    window.onload = fetchNames;
+  </script>
+
+</body>
+</html>
